@@ -30,6 +30,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include "misc.h"
 #include "args.h"
@@ -443,7 +445,7 @@ print_msg(struct prog_info *pi, int type, char *fmt, ...)
 
 
 int
-def_const(struct prog_info *pi, const char *name, int value)
+def_const(struct prog_info *pi, const char *name, int64_t value)
 {
 	struct label *label;
 	label = malloc(sizeof(struct label));
@@ -468,7 +470,7 @@ def_const(struct prog_info *pi, const char *name, int value)
 }
 
 int
-def_var(struct prog_info *pi, char *name, int value)
+def_var(struct prog_info *pi, char *name, int64_t value)
 {
 	struct label *label;
 
@@ -636,7 +638,7 @@ test_orglist(struct segment_info *si)
 
 /* Get the value of a label. Return FALSE if label was not found */
 int
-get_label(struct prog_info *pi,char *name,int *value)
+get_label(struct prog_info *pi,char *name,int64_t *value)
 {
 	struct label *label=search_symbol(pi,pi->first_label,name,NULL);
 	if (label==NULL) return False;
@@ -645,7 +647,7 @@ get_label(struct prog_info *pi,char *name,int *value)
 }
 
 int
-get_constant(struct prog_info *pi,char *name,int *value)
+get_constant(struct prog_info *pi,char *name,int64_t *value)
 {
 	struct label *label=search_symbol(pi,pi->first_constant,name,NULL);
 	if (label==NULL) return False;
@@ -654,7 +656,7 @@ get_constant(struct prog_info *pi,char *name,int *value)
 }
 
 int
-get_variable(struct prog_info *pi,char *name,int *value)
+get_variable(struct prog_info *pi,char *name,int64_t *value)
 {
 	struct label *label=search_symbol(pi,pi->first_variable,name,NULL);
 	if (label==NULL) return False;
