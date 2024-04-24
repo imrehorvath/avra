@@ -221,14 +221,8 @@ preprocess_line(struct prog_info *pi, char *line)
 #if debug == 1
 					printf("preprocess_line obj next \"%s\" data \"%s\"\n", next, data);
 #endif
-					if (pi->pass == PASS_1) {
-						if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
-							return (PREPROCESS_NEXT_LINE);
-					} else {
-						/* Pass 2 */
-						if (test_preproc_macro(pi, next, NULL) != NULL)
-							return (PREPROCESS_NEXT_LINE);
-					}
+					if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
+						return (PREPROCESS_NEXT_LINE);
 					if (def_preproc_macro(pi, next, PREPROC_MACRO_OBJECT_LIKE, NULL, data) == False)
 						return (PREPROCESS_FATAL_ERROR);
 				} else {
@@ -270,14 +264,8 @@ preprocess_line(struct prog_info *pi, char *line)
 					}
 					if (!collect_paramarg(pi, param, &first_param, &last_param))
 						return (PREPROCESS_FATAL_ERROR);
-					if (pi->pass == PASS_1) {
-						if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
-							return (PREPROCESS_NEXT_LINE);
-					} else {
-						/* Pass 2 */
-						if (test_preproc_macro(pi, next, NULL) != NULL)
-							return (PREPROCESS_NEXT_LINE);
-					}
+					if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
+						return (PREPROCESS_NEXT_LINE);
 					if (def_preproc_macro(pi, next, PREPROC_MACRO_FUNCTION_LIKE, first_param, data) == False)
 						return (PREPROCESS_FATAL_ERROR);
 				}
