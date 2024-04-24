@@ -927,33 +927,16 @@ def_preproc_macro(struct prog_info *pi, char *name, int type, struct item_list *
 void
 undef_preproc_macro(struct prog_info *pi, char *name)
 {
-	struct preproc_macro *prev, *macro;
-
-	if (!pi->first_preproc_macro)
-		return;
-
-	if (!nocase_strcmp(pi->first_preproc_macro->name, name)) {
-		macro = pi->first_preproc_macro;
-		pi->first_preproc_macro = macro->next;
-		if (pi->last_preproc_macro == macro)
-			pi->last_preproc_macro = macro->next;
-
-		free(macro->value);
-		if (macro->type == PREPROC_MACRO_FUNCTION_LIKE)
-			free_item_list(macro->params);
-		free(macro->name);
-		free(macro);
-
-		return;
-	}
-
-	prev = pi->first_preproc_macro;
-	macro = prev->next;
+	struct preproc_macro *prev = NULL, *macro = pi->first_preproc_macro;
 
 	while (macro) {
 		if (!nocase_strcmp(macro->name, name)) {
-			prev->next = macro->next;
-			if (pi->last_preproc_macro == macro)
+			if (prev)
+				prev->next = macro->next;
+			else
+				pi->first_preproc_macro = macro->next;
+
+			if (macro == pi->last_preproc_macro)
 				pi->last_preproc_macro = prev;
 
 			free(macro->value);
@@ -962,11 +945,11 @@ undef_preproc_macro(struct prog_info *pi, char *name)
 			free(macro->name);
 			free(macro);
 
-			return;
+			break;
 		}
 
+		prev = macro;
 		macro = macro->next;
-		prev = prev->next;
 	}
 }
 
