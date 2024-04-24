@@ -350,6 +350,7 @@ int get_preproc_macro(struct prog_info *pi,char *name,struct preproc_macro **pm)
 struct preproc_macro *test_preproc_macro(struct prog_info *pi,char *name,char *message);
 struct preproc_macro *search_preproc_macro(struct prog_info *pi,struct preproc_macro *first,char *name,char *message);
 int def_preproc_macro(struct prog_info *pi, char *name, int type, struct item_list *params, char *value);
+void undef_preproc_macro(struct prog_info *pi, char *name);
 void free_preproc_macros(struct prog_info *pi);
 int item_list_length(struct item_list *lst);
 void free_item_list(struct item_list *lst);

@@ -224,11 +224,13 @@ preprocess_line(struct prog_info *pi, char *line)
 					if (pi->pass == PASS_1) {
 						if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
 							return (PREPROCESS_NEXT_LINE);
-						if (def_preproc_macro(pi, next, PREPROC_MACRO_OBJECT_LIKE, NULL, data) == False)
-							return (PREPROCESS_FATAL_ERROR);
 					} else {
 						/* Pass 2 */
+						if (test_preproc_macro(pi, next, NULL) != NULL)
+							return (PREPROCESS_NEXT_LINE);
 					}
+					if (def_preproc_macro(pi, next, PREPROC_MACRO_OBJECT_LIKE, NULL, data) == False)
+						return (PREPROCESS_FATAL_ERROR);
 				} else {
 					/* Function-like macro definition */
 #if debug == 1
@@ -271,20 +273,24 @@ preprocess_line(struct prog_info *pi, char *line)
 					if (pi->pass == PASS_1) {
 						if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
 							return (PREPROCESS_NEXT_LINE);
-						if (def_preproc_macro(pi, next, PREPROC_MACRO_FUNCTION_LIKE, first_param, data) == False)
-							return (PREPROCESS_FATAL_ERROR);
 					} else {
 						/* Pass 2 */
+						if (test_preproc_macro(pi, next, NULL) != NULL)
+							return (PREPROCESS_NEXT_LINE);
 					}
-				}
-				if ((pi->pass == PASS_2) && pi->list_line && pi->list_on) {
-					fprintf(pi->list_file, "          %s\n", pi->list_line);
-					pi->list_line = NULL;
+					if (def_preproc_macro(pi, next, PREPROC_MACRO_FUNCTION_LIKE, first_param, data) == False)
+						return (PREPROCESS_FATAL_ERROR);
 				}
 				return (PREPROCESS_NEXT_LINE);	/* #define successfully parsed, continue with next line */
 			} else if (!nocase_strcmp(temp+1, "undef")) {	/* #undef */
-				print_msg(pi, MSGTYPE_ERROR, "#undef is not supported at the moment");
-				return (PREPROCESS_NEXT_LINE);
+				/* #undef name */
+				if (!next) {
+					print_msg(pi, MSGTYPE_ERROR, "#undef needs an operand");
+					return (PREPROCESS_NEXT_LINE);
+				}
+				get_next_token(next, TERM_END);
+				undef_preproc_macro(pi, next);
+				return (PREPROCESS_NEXT_LINE);	/* #undef successfully parsed, continue with next line */
 			} else {
 				/* Rest of the preprocessor macros to be handled by the original code */
 			}

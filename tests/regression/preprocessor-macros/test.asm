@@ -14,3 +14,10 @@ IMMED(ld) r16, 1
 SUBI(FOO, BAR) r16, 1
 
 IMMED(ld) r16, SQR(SQR(1+1))
+
+#define BAZ (1 << 4)
+IMMED(ld) r16, BAZ
+
+#undef BAZ
+#define BAZ(X) SQR(X)
+IMMED(ld) r16, BAZ(4)

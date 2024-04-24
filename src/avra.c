@@ -215,6 +215,7 @@ assemble(struct prog_info *pi)
 			if (pi->error_count == 0) {
 				pi->segment = pi->cseg;
 				rewind_segments(pi);
+				free_preproc_macros(pi);	/* free the preproc macros for before PASS_2 */
 				pi->pass=PASS_2;
 				if (load_arg_defines(pi)==False)
 					return -1;
@@ -921,6 +922,52 @@ def_preproc_macro(struct prog_info *pi, char *name, int type, struct item_list *
 		pi->first_preproc_macro = macro;
 	pi->last_preproc_macro = macro;
 	return (True);
+}
+
+void
+undef_preproc_macro(struct prog_info *pi, char *name)
+{
+	struct preproc_macro *prev, *macro;
+
+	if (!pi->first_preproc_macro)
+		return;
+
+	if (!nocase_strcmp(pi->first_preproc_macro->name, name)) {
+		macro = pi->first_preproc_macro;
+		pi->first_preproc_macro = macro->next;
+		if (pi->last_preproc_macro == macro)
+			pi->last_preproc_macro = macro->next;
+
+		free(macro->value);
+		if (macro->type == PREPROC_MACRO_FUNCTION_LIKE)
+			free_item_list(macro->params);
+		free(macro->name);
+		free(macro);
+
+		return;
+	}
+
+	prev = pi->first_preproc_macro;
+	macro = prev->next;
+
+	while (macro) {
+		if (!nocase_strcmp(macro->name, name)) {
+			prev->next = macro->next;
+			if (pi->last_preproc_macro == macro)
+				pi->last_preproc_macro = prev;
+
+			free(macro->value);
+			if (macro->type == PREPROC_MACRO_FUNCTION_LIKE)
+				free_item_list(macro->params);
+			free(macro->name);
+			free(macro);
+
+			return;
+		}
+
+		macro = macro->next;
+		prev = prev->next;
+	}
 }
 
 void
