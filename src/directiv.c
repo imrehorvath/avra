@@ -232,6 +232,13 @@ parse_directive(struct prog_info *pi)
 				return (True);
 			}
 		}
+		/* Check, if symbol is already defined as a label or constant */
+		if (pi->pass == PASS_2) {
+			if (get_label(pi,next,NULL))
+				print_msg(pi, MSGTYPE_WARNING, "Name '%s' is used for a register and a label", next);
+			if (get_constant(pi,next,NULL))
+				print_msg(pi, MSGTYPE_WARNING, "Name '%s' is used for a register and a constant", next);
+		}
 		/* check if this regname is already defined */
 		for (def = pi->first_def; def; def = def->next) {
 			if (!nocase_strcmp(def->name, next)) {
@@ -241,13 +248,6 @@ parse_directive(struct prog_info *pi)
 				def->reg = i;
 				return (True);
 			}
-		}
-		/* Check, if symbol is already defined as a label or constant */
-		if (pi->pass == PASS_2) {
-			if (get_label(pi,next,NULL))
-				print_msg(pi, MSGTYPE_WARNING, "Name '%s' is used for a register and a label", next);
-			if (get_constant(pi,next,NULL))
-				print_msg(pi, MSGTYPE_WARNING, "Name '%s' is used for a register and a constant", next);
 		}
 
 		def = malloc(sizeof(struct def));
