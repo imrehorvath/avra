@@ -163,7 +163,7 @@ parse_directive(struct prog_info *pi)
 	char *next, *data, buf[140];
 	struct file_info *fi_bak;
 
-	struct def *def;
+	struct def *prev_def, *def;
 	struct data_list *incpath, *dl;
 
 	next = get_next_token(pi->fi->scratch, TERM_SPACE);
@@ -593,7 +593,36 @@ parse_directive(struct prog_info *pi)
 			return (True);
 		}
 		break;
-	case DIRECTIVE_UNDEF: /* TODO */
+	case DIRECTIVE_UNDEF:
+		if (!next) {
+			print_msg(pi, MSGTYPE_ERROR, ".UNDEF needs an operand");
+			return (True);
+		}
+		get_next_token(next, TERM_END);
+		if (pi->pass==PASS_1) { /* Pass 1 */
+			prev_def = NULL;
+			def = pi->first_def;
+			while (def) {
+				if (!nocase_strcmp(def->name, next)) {
+					if (prev_def)
+						prev_def->next = def->next;
+					else
+						pi->first_def = def->next;
+					if (def == pi->last_def)
+						pi->last_def = prev_def;
+					free(def->name);
+					free(def);
+					break;
+				}
+				prev_def = def;
+				def = def->next;
+			}
+		} else { /* Pass 2 */
+		}
+		if ((pi->pass == PASS_2) && pi->list_line && pi->list_on) {
+			fprintf(pi->list_file, "          %s\n", pi->list_line);
+			pi->list_line = NULL;
+		}
 		break;
 	case DIRECTIVE_IFDEF:
 		if (!next) {
