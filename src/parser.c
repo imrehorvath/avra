@@ -269,6 +269,10 @@ preprocess_line(struct prog_info *pi, char *line)
 					if (def_preproc_macro(pi, next, PREPROC_MACRO_FUNCTION_LIKE, first_param, data) == False)
 						return (PREPROCESS_FATAL_ERROR);
 				}
+				if ((pi->pass == PASS_2) && pi->list_line && pi->list_on) {
+					fprintf(pi->list_file, "          %s\n", pi->list_line);
+					pi->list_line = NULL;
+				}
 				return (PREPROCESS_NEXT_LINE);	/* #define successfully parsed, continue with next line */
 			} else if (!nocase_strcmp(temp+1, "undef")) {	/* #undef */
 				/* #undef name */
@@ -278,6 +282,10 @@ preprocess_line(struct prog_info *pi, char *line)
 				}
 				get_next_token(next, TERM_END);
 				undef_preproc_macro(pi, next);
+				if ((pi->pass == PASS_2) && pi->list_line && pi->list_on) {
+					fprintf(pi->list_file, "          %s\n", pi->list_line);
+					pi->list_line = NULL;
+				}
 				return (PREPROCESS_NEXT_LINE);	/* #undef successfully parsed, continue with next line */
 			} else {
 				/* Rest of the preprocessor macros to be handled by the original code */
