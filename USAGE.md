@@ -10,9 +10,58 @@ options work).
 There is a possibility to supress certain warnings. 
 Currently only register reassignment warnings can be supressed:
 
-	avra -W NoRegDef
+```
+avra -W NoRegDef
+```
 
-## Using Directives
+## Using Preprocessor Directives
+
+This version of the AVRA assembler has some preprocessor-like support.
+
+It has object- and function-like preorocessor macros. Preprocessor macros can be defined using `#define`.
+
+### Object-like macro definition
+
+```
+#define EIGHT (1 << 3)
+
+ldi r16, EIGHT
+```
+
+### Function-like macro definition
+
+```
+#define SQR(X) ((X)*(X))
+
+ldi r16, SQR(4)
+```
+
+### More complex preprocessor macro example
+
+```
+#define FOOBAR subi
+#define IMMED(X) X##i
+#define SUBI(X,Y) X ## Y
+
+IMMED(ld) r16, 1
+SUBI(FOO, BAR) r16, 1
+```
+
+### Using Include Files
+
+To avoid multiple inclusion of include files, you can use some directives, as
+shown in the following example:
+
+```
+    #ifndef _MYFILE_ASM_ ; Avoid multiple inclusion of myfile.asm
+    #define _MYFILE_ASM_
+
+    ; Anything here will only be included once.
+
+    #endif
+```
+
+## Using Assembler Directives
 
 AVRA offers a number of directives that are not part of Atmel's assembler.
 These directives should help you in creating versatile and more modular code.
@@ -25,11 +74,15 @@ sensitive. The `.define` directive is not to be confused with `.def`, which is
 used to assign registers only. This is due to backward compatibility with
 Atmel's AVRASM32. Here is an example on how `.define` can be used:
 
+```
     .define network 1
+```
 
 Now `network` is set to the value 1. You can also define names without values:
 
+```
 	.define network
+```
 
 Both versions are equivalent, as AVRA will implicitly define `network` to be 1
 in the second case. (Although, if you really want `network` to be 1, you
@@ -39,9 +92,11 @@ existence (`.ifdef` and `.ifndef`) as well as on the value it represents. The
 following code shows a way to prevent error messages due to testing undefined
 constants:
 
+```
     .ifndef network
     .define network 0
     .endif
+```
 
 ### Directives `.if` and `.else`
 
@@ -49,11 +104,13 @@ The three lines in the last example set the default value of `network`.
 Now we could use the `.if` and `.else` directives test whether, e.g., network
 support is to be included into the assembly process:
 
+```
     .if network == 1
     .include "include\tcpip.asm"
     .else
     .include "include\dummynet.asm"
     .endif
+```
 
 There is also an `.elif` ("else if") directive, which does what you think.
 
@@ -63,9 +120,11 @@ The `.error` directive can be used to throw an error during the assembly
 process. The following example shows how we can stop the assembler if a
 particular value has not been previously set:
 
+```
     .ifndef network
     .error "network is not configured!" ; the assembler stops here
 	.endif
+```
 
 ### Directives `.nolist` and `.list`
 
@@ -87,36 +146,44 @@ the same filename in separate included directories.
 To avoid multiple inclusion of include files, you can use some directives, as
 shown in the following example:
 
+```
     .ifndef _MYFILE_ASM_ ; Avoid multiple inclusion of myfile.asm
     .define _MYFILE_ASM_
   
     ; Anything here will only be included once.
 
     .endif
+```
 
 ## Using Build Date Meta Tags
 
 You can use some special tags that AVRA supports to implement compiler build
 time and date into your program:
     
-    %MINUTE%  is replaced by the current minute (00-59)
-    %HOUR%    is replaced by the current hour (00-23)
-    %DAY%     is replaced by the current day of month (01-31)
-    %MONTH%   is replaced by the current month (01-12)
-    %YEAR%    is replaced by the current year (2004-9999)
+    `%MINUTE%`  is replaced by the current minute (00-59)
+    `%HOUR%`    is replaced by the current hour (00-23)
+    `%DAY%`     is replaced by the current day of month (01-31)
+    `%MONTH%`   is replaced by the current month (01-12)
+    `%YEAR%`    is replaced by the current year (2004-9999)
 
 For example, these tags can be used as follows:
 
+```
     buildtime: .db "Release date %DAY%.%MONTH%.%YEAR% %HOUR%:%MINUTE%"
+```
     
 This line will then be assembled by AVRA into:
     
+```
     buildtime: .db "Release date 10.05.2004 19:54"
+```
    
 As another example, you can create an automatically-updating serial number with
 meta tags:
     
+```
     .define serialnumber %DAY% + %MONTH%*31 + (%YEAR% - 2000) *31*12
+```
 
 The `%TAG%` is translated before any other parsing happens. The real output can
 be found in the list file.
@@ -145,9 +212,11 @@ There are 3 data types that can be used in macro definitions. The data types
 are specified by appending one of the following codes that start with an
 underscore to the end of a macro name:
 
+```
 	immediate values  _i
 	registers         _8,_16,_24,_32,_40,_48,_56,_64
 	void parameter    _v
+```
 
 See the following section for examples on how these types work.
 
@@ -160,6 +229,7 @@ without any side effects.
 
 To simplify the examples below, we redefine some registers:
 
+```
 	.def a = r16  ; general purpose registers
 	.def b = r17
 	.def c = r18
@@ -167,15 +237,19 @@ To simplify the examples below, we redefine some registers:
 
 	.def w = r20  ; working registers
 	.def v = r21
+```
 
 If we substract the 16 bit value `c:d` from `a:b`, we usually have to use the
 following command sequence:
 
+```
 	sub b,d
 	sbc a,c
+```
 
 Now we can use macros to simplify subtraction with 16 bit values:
 
+```
 	.macro subs
 		.message "no parameters specified"
 	.endm
@@ -197,11 +271,13 @@ Now we can use macros to simplify subtraction with 16 bit values:
 	; Or, for a 16 bit minus 8 bit subtraction:
 
 	subs [a:b,c]
+```
 
 Note that we have essentially overloaded the `subs` macro to accept arguments
 of different types.
 Another example of macro overloading follows.
 
+```
 	.macro load
 		; This message is shown if you use the macro within your code
 		; specifying no parameters. If your macro allows the case where
@@ -233,10 +309,12 @@ Another example of macro overloading follows.
 	load [a:b,15]     ; Uses macro load_16_i to load immediate.
 
 	load [a:b:c:d,15] ; Uses macro load_32_i to load immediate.
+```
 
 
 ### More Examples
 
+```
        .dseg
        counter: .byte 2
 
@@ -301,6 +379,7 @@ Another example of macro overloading follows.
        ; And the same for 32 bit pokes:
 
        poke [counter,,,,9999] ;uses poke_i_v_v_v_i
+```
 
 ### Loops Within Macros
 
@@ -311,6 +390,7 @@ replaced by a running number.
 
 #### Loop Example
 
+```
 	; Definition of the macro
 
 	.macro write_8_8
@@ -335,6 +415,7 @@ replaced by a running number.
 		st   Z+,c
 		dec  d
 		brne write_2
+```
 
 ## Warnings and Errors
 
@@ -364,8 +445,10 @@ eeprom or code space. Using these directives within the data segment is
 forbidden because you cannot set ram content at assembly time. You can only
 allocate memory for your variables using labels and the `.byte` directive:
 
+```
     .dseg
     my_string: .byte 15
+```
 
 ### The `.byte` Directive
 

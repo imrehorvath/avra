@@ -1,5 +1,15 @@
 # ARVA Change log
 
+## Release 1.4.2b (2024-04-26, by Imre Horvath)
+
+- Add 64 bit expressions
+- Add preprocessor directives `#define` and `#undef` to define and undefine object- and function-like preprocessor macros
+- Add preprocessor operator `##` to concatenate preprocessor tokens
+- Implement `.undef` assembler directive
+- Update makefile for macOS
+- Add the command line option `-W` to the help text
+- Add tests for the new features
+
 ## Release 1.4.2 (2020-07-18, by Burkhard Arenfeld, Robert Russell, and others)
 
 - Remove bug with wrong start of DSEG for processors with SRAM start != 0x60
