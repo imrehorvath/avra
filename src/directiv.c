@@ -535,6 +535,45 @@ parse_directive(struct prog_info *pi)
 		if (test_constant(pi,next,"%s have already been defined as a .EQU constant")!=NULL)
 			return (True);
 		return (def_var(pi, next, i));
+	case DIRECTIVE_DEFINE:
+		if (!next) {
+			print_msg(pi, MSGTYPE_ERROR, ".DEFINE needs an operand");
+			return (True);
+		}
+		data = get_next_token(next, TERM_SPACE);
+		if (data) {
+			get_next_token(data, TERM_END);
+			if (!get_expr(pi, data, &i))
+				return (False);
+		} else
+			i = 1;
+		if (test_label(pi,next,"%s have already been defined as a label")!=NULL)
+			return (True);
+		if (test_variable(pi,next,"%s have already been defined as a .SET variable")!=NULL)
+			return (True);
+		/* Forward references allowed. But check, if everything is ok ... */
+		if (pi->pass==PASS_1) { /* Pass 1 */
+			if (test_constant(pi,next,"Can't redefine constant %s, use .SET instead")!=NULL)
+				return (True);
+			if (def_const(pi, next, i)==False)
+				return (False);
+		} else { /* Pass 2 */
+			int64_t j;
+			if (get_constant(pi, next, &j)==False) {  /* Defined in Pass 1 and now missing ? */
+				print_msg(pi, MSGTYPE_ERROR, "Constant %s is missing in pass 2", next);
+				return (False);
+			}
+			if (i != j) {
+				print_msg(pi, MSGTYPE_ERROR, "Constant %s changed value from %d in pass1 to %d in pass 2", next,j,i);
+				return (False);
+			}
+			/* OK. Definition is unchanged */
+		}
+		if ((pi->pass == PASS_2) && pi->list_line && pi->list_on) {
+			fprintf(pi->list_file, "          %s\n", pi->list_line);
+			pi->list_line = NULL;
+		}
+		break;
 	case DIRECTIVE_NOOVERLAP:
 		if (pi->pass == PASS_1) {
 			fix_orglist(pi->segment);
