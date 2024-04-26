@@ -182,7 +182,7 @@ int
 preprocess_line(struct prog_info *pi, char *line)
 {
 	char *ptr, *next, *data, *param, *next_param;
-	int params_cnt, args_cnt, macro_expanded;
+	int params_cnt, args_cnt, macro_expanded, expand;
 	struct item_list *params, *first_param, *last_param, *first_arg, *last_arg, *args_ptr;
 	struct preproc_macro *macro;
 	char *macro_begin, *macro_end, *par_begin, *par_end;
@@ -190,6 +190,7 @@ preprocess_line(struct prog_info *pi, char *line)
 	char temp[LINEBUFFER_LENGTH];
 
 	do {
+		expand = True;
 		macro_expanded = False;
 		ptr = line;
 
@@ -200,7 +201,7 @@ preprocess_line(struct prog_info *pi, char *line)
 			memmove(line, ptr, line+LINEBUFFER_LENGTH-1-ptr);
 		strcpy(temp, line);
 
-		if (*temp == '#') {
+		if (*temp == '#') {	/* Preprocessor directive line */
 			next = get_next_token(temp, TERM_SPACE);
 			if (!nocase_strcmp(temp+1, "define")) {	/* #define */
 				/* #define name [value] */
@@ -219,7 +220,7 @@ preprocess_line(struct prog_info *pi, char *line)
 					else
 						get_next_token(data, TERM_END);
 #if debug == 1
-					printf("preprocess_line obj next \"%s\" data \"%s\"\n", next, data);
+					printf("preprocess_line DEF obj next \"%s\" data \"%s\"\n", next, data);
 #endif
 					if (test_preproc_macro(pi, next, "Preprocessor macro %s has already been defined") != NULL)
 						return (PREPROCESS_NEXT_LINE);
@@ -228,13 +229,13 @@ preprocess_line(struct prog_info *pi, char *line)
 				} else {
 					/* Function-like macro definition */
 #if debug == 1
-					printf("preprocess_line fun next \"%s\"\n", next);
+					printf("preprocess_line DEF fun next \"%s\"\n", next);
 #endif
 					/* Collect params */
 					first_param = last_param = NULL;
 					while ((next_param = get_next_token(param, TERM_COMMA))) {
 #if debug == 1
-						printf("preprocess_line fun param \"%s\"\n", param);
+						printf("preprocess_line DEF fun param \"%s\"\n", param);
 #endif
 						if (!is_label(param)) {
 							print_msg(pi, MSGTYPE_ERROR, "Function-like macro %s with invalid parameter %s", next, param);
@@ -255,8 +256,8 @@ preprocess_line(struct prog_info *pi, char *line)
 						return (PREPROCESS_NEXT_LINE);
 					}
 #if debug == 1
-					printf("preprocess_line fun param \"%s\"\n", param);
-					printf("preprocess_line fun data \"%s\"\n", data);
+					printf("preprocess_line DEF fun param \"%s\"\n", param);
+					printf("preprocess_line DEF fun data \"%s\"\n", data);
 #endif
 					if (!is_label(param)) {
 						print_msg(pi, MSGTYPE_ERROR, "Function-like macro %s with invalid parameter %s", next, param);
@@ -287,10 +288,27 @@ preprocess_line(struct prog_info *pi, char *line)
 					pi->list_line = NULL;
 				}
 				return (PREPROCESS_NEXT_LINE);	/* #undef successfully parsed, continue with next line */
+			} else if (!nocase_strcmp(temp+1, "ifdef")) {	/* #ifdef */
+				expand = False;
+			} else if (!nocase_strcmp(temp+1, "ifndef")) {	/* #ifndef */
+				expand = False;
 			} else {
 				/* Rest of the preprocessor macros to be handled by the original code */
 			}
-		} else {
+		} else if (*temp == '.') {	/* Assembler directive line */
+			get_next_token(temp, TERM_SPACE);
+			if (!nocase_strcmp(temp+1, "define")) {	/* .define */
+				expand = False;
+			} else if (!nocase_strcmp(temp+1, "undef")) {	/* .undef */
+				expand = False;
+			} else if (!nocase_strcmp(temp+1, "ifdef")) {	/* .ifdef */
+				expand = False;
+			} else if (!nocase_strcmp(temp+1, "ifndef")) {	/* .ifndef */
+				expand = False;
+			}
+		}
+
+		if (expand) {
 			/* Expand preprocessor macros */
 			for (macro = pi->first_preproc_macro; macro;) {
 				if (macro->type == PREPROC_MACRO_OBJECT_LIKE) {
@@ -300,6 +318,9 @@ preprocess_line(struct prog_info *pi, char *line)
 							print_msg(pi, MSGTYPE_ERROR, "Expanded macro %s with value %s too big", macro->name, macro->value);
 							return (PREPROCESS_NEXT_LINE);
 						}
+#if debug == 1
+						printf("preprocess_line EXP obj \"%s\" to \"%s\"\n", macro->name, macro->value);
+#endif
 						macro_expanded = True;
 					}
 				} else {
@@ -316,13 +337,13 @@ preprocess_line(struct prog_info *pi, char *line)
 							return (PREPROCESS_FATAL_ERROR);
 						}
 #if debug == 1
-						printf("preprocess_line arg \"%s\"\n", arg);
+						printf("preprocess_line EXP fun \"%s\" arg \"%s\"\n", macro->name, arg);
 #endif
 						/* Collect args */
 						first_arg = last_arg = NULL;
 						while ((next_arg = get_next_token(arg, TERM_COMMA))) {
 #if debug == 1
-						printf("preprocess_line arg 1+ \"%s\"\n", arg);
+						printf("preprocess_line EXP fun arg 1+ \"%s\"\n", arg);
 #endif
 							if (!is_label(arg)) {
 								print_msg(pi, MSGTYPE_ERROR, "Function-like macro %s with invalid argument %s", macro->name, arg);
@@ -335,7 +356,7 @@ preprocess_line(struct prog_info *pi, char *line)
 						}
 						get_next_token(arg, TERM_END);
 #if debug == 1
-						printf("preprocess_line arg 1  \"%s\"\n", arg);
+						printf("preprocess_line EXP fun arg 1  \"%s\"\n", arg);
 #endif
 						if (!collect_paramarg(pi, arg, &first_arg, &last_arg))
 							return (PREPROCESS_FATAL_ERROR);
@@ -349,7 +370,7 @@ preprocess_line(struct prog_info *pi, char *line)
 						}
 						strcpy(temp, macro->value);
 #if debug == 1
-						printf("preprocess_line temp \"%s\"\n", temp);
+						printf("preprocess_line EXP fun temp \"%s\"\n", temp);
 #endif
 						for (params = macro->params, args_ptr = first_arg; params; params = params->next, args_ptr = args_ptr->next) {
 							while ((par_begin = locate_macro_call(temp, params->value, &par_end))) {
@@ -358,31 +379,31 @@ preprocess_line(struct prog_info *pi, char *line)
 									return (PREPROCESS_NEXT_LINE);
 								}
 #if debug == 1
-								printf("preprocess_line temp \"%s\"\n", temp);
+								printf("preprocess_line EXP fun rewrite temp \"%s\"\n", temp);
 #endif
 							}
 						}
 						free_item_list(first_arg);
 #if debug == 1
-						printf("preprocess_line line (before inplace_replace) \"%s\"\n", line);
+						printf("preprocess_line EXP fun line (before inplace_replace) \"%s\"\n", line);
 #endif
 						if (!inplace_replace(line, macro_begin, macro_end, temp, LINEBUFFER_LENGTH)) {
 							print_msg(pi, MSGTYPE_ERROR, "Expanded macro %s with value %s too big", macro->name, temp);
 							return (PREPROCESS_NEXT_LINE);
 						}
 #if debug == 1
-						printf("preprocess_line line (after inplace_replace) \"%s\"\n", line);
+						printf("preprocess_line EXP fun line (after inplace_replace) \"%s\"\n", line);
 #endif
 						apply_preproc_macro_opers(line);
 #if debug == 1
-						printf("preprocess_line line (after apply_preproc_macro_opers) \"%s\"\n", line);
+						printf("preprocess_line EXP fun line (after apply_preproc_macro_opers) \"%s\"\n", line);
 #endif
 						macro_expanded = True;
 					}
 				}
 				macro = macro->next;
 			}
-		}
+		} /* if (expand) */
 
 	} while (macro_expanded);
 	return (PREPROCESS_PARSE_LINE);
