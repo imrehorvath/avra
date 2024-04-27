@@ -652,7 +652,7 @@ funcall_token(char *token) {
 char *
 locate_macro_call(char *line, char *name, char **end)
 {
-	char *macro_call, *macro_call_end, *comment, *ptr;
+	char *macro_call, *macro_call_end, *comment, *dblquo, *ptr;
 	char *funcall_begin, *funcall_end;
 	int name_len, inside_defined;
 	comment = strchr(line, ';');
@@ -673,6 +673,11 @@ locate_macro_call(char *line, char *name, char **end)
 			line = macro_call_end;
 			continue;
 		}
+		if ((dblquo = strchr(line, '"')) && dblquo < macro_call)
+			if ((dblquo = strchr(dblquo+1, '"')) && macro_call_end < dblquo) {
+				line = dblquo+1;
+				continue;
+			}
 		ptr = line;
 		inside_defined = False;
 		while (!inside_defined && 
