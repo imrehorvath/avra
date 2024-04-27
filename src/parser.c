@@ -645,7 +645,8 @@ funcall_token(char *token) {
 }
 
 /* Locate the first occurence of a macro call in a line.
- * Intended to be called repetitively to exhaust all possibilities.
+ * Runs in conjunction with macro-expansion, and called repetitively until all
+ * occasions gets expaned.
  * Returns NULL in case there is no occurence. 
  * Otherwise returns the pointer to the beginning of the macro call and sets the end ptr.*/
 char *
@@ -689,7 +690,8 @@ locate_macro_call(char *line, char *name, char **end)
 }
 
 /* Locate the first occurence of the function call expression in a line.
- * Intended to be called repetitively to exhaust all possibilities.
+ * Runs in conjunction with macro-expansion, and called repetitively until all
+ * occasions gets expaned.
  * Returns NULL in case there is no occurence. 
  * Otherwise returns the pointer to the beginning of the expr. and sets the end ptr.*/
 char *
