@@ -663,7 +663,9 @@ locate_macro_call(char *line, char *name, char **end)
 		if (comment && comment < macro_call)
 			return (NULL);
 		macro_call_end = macro_call + name_len - 1;
-		if (macro_call == line || IS_END_OR_COMMENT(*(macro_call_end + 1)))
+		if (IS_END_OR_COMMENT(*(macro_call_end + 1)))
+			break;
+		if (macro_call == line && !IS_LABEL(*(macro_call_end + 1)))
 			break;
 		if (IS_LABEL(*(macro_call - 1)) || IS_LABEL(*(macro_call_end + 1))) {
 			while (IS_LABEL(*macro_call_end)) macro_call_end++;
