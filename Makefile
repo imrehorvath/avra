@@ -39,9 +39,9 @@ dist: avra-$(VERSION).tar.gz
 
 .PHONY: install
 install: all
-	install -d $(DESTDIR)$(PREFIX)/bin
-	install -m 755 src/avra $(DESTDIR)$(PREFIX)/bin
-	install -d $(DESTDIR)$(TARGET_INCLUDE_PATH)
+	install -m 0775 -d $(DESTDIR)$(PREFIX)/bin
+	install src/avra $(DESTDIR)$(PREFIX)/bin
+	install -m 0775 -d $(DESTDIR)$(TARGET_INCLUDE_PATH)
 	cp includes/* $(DESTDIR)$(TARGET_INCLUDE_PATH)
 
 .PHONY: check
